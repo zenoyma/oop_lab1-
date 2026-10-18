@@ -1,0 +1,11 @@
+# .NET build output
+bin/
+obj/
+*.user
+.vs/
+.idea/
+TestResults/
+
+# Google OAuth
+client_secret*.json
+token/
