@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Spreadsheet.UI.MainPage"
+             Title="Електронна таблиця">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto" Padding="8" RowSpacing="6">
+
+        <!-- Кнопки -->
+        <FlexLayout Grid.Row="0" Wrap="Wrap" AlignItems="Center">
+            <FlexLayout.Resources>
+                <Style TargetType="Button">
+                    <Setter Property="Margin" Value="0,0,6,6" />
+                    <Setter Property="Padding" Value="10,4" />
+                </Style>
+            </FlexLayout.Resources>
+            <Button Text="Новий" Clicked="OnNewTableClicked" />
+            <Button Text="Відкрити файл" Clicked="OnOpenFileClicked" />
+            <Button Text="Зберегти у файл" Clicked="OnSaveFileClicked" />
+            <Button Text="Відкрити з Drive" Clicked="OnOpenDriveClicked" />
+            <Button Text="Зберегти на Drive" Clicked="OnSaveDriveClicked" />
+            <Button x:Name="modeButton" Text="Режим: ЗНАЧЕННЯ" Clicked="OnModeButtonClicked" />
+            <Button Text="+ Рядок" Clicked="OnAddRowClicked" />
+            <Button Text="− Рядок" Clicked="OnRemoveRowClicked" />
+            <Button Text="+ Стовпець" Clicked="OnAddColumnClicked" />
+            <Button Text="− Стовпець" Clicked="OnRemoveColumnClicked" />
+            <Button Text="Довідка" Clicked="OnHelpClicked" />
+        </FlexLayout>
+
+        <!-- Рядок формул: адреса і вираз виділеної клітинки -->
+        <Grid Grid.Row="1" ColumnDefinitions="60,*" ColumnSpacing="6">
+            <Label x:Name="cellLabel" Text="A1" VerticalOptions="Center" FontAttributes="Bold" />
+            <Entry x:Name="formulaEntry" Grid.Column="1" Placeholder="Вираз, напр. mmax(A1, inc(A2), 7) >= 10"
+                   Completed="OnFormulaCompleted" />
+        </Grid>
+
+        <ScrollView Grid.Row="2" Orientation="Both">
+            <Grid x:Name="tableGrid" ColumnSpacing="1" RowSpacing="1" />
+        </ScrollView>
+
+        <!-- Рядок стану: помилки та повідомлення -->
+        <Label x:Name="statusLabel" Grid.Row="3" TextColor="OrangeRed" />
+    </Grid>
+</ContentPage>
