@@ -4,6 +4,30 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <!-- вимикаємо попередження CS3021 у згенерованому ANTLR коді -->
+    <NoWarn>$(NoWarn);CS3021</NoWarn>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Antlr4.Runtime.Standard" Version="4.13.1" />
+    <PackageReference Include="Antlr4BuildTasks" Version="12.8.0" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- з граматики під час збірки генеруються LabCalculatorLexer, LabCalculatorParser, LabCalculatorBaseVisitor -->
+  <ItemGroup>
+    <Antlr4 Include="Grammar\LabCalculator.g4">
+      <Package>Spreadsheet.Core.Grammar</Package>
+      <Visitor>true</Visitor>
+      <Listener>false</Listener>
+    </Antlr4>
+  </ItemGroup>
+
+  <!-- Antlr4BuildTasks псує кириличні шляхи ("2 курс/ооп") і не додає згенеровані .cs у збірку,
+       тому додаємо їх самі -->
+  <Target Name="AddGeneratedAntlrFiles" AfterTargets="Antlr4Compile" BeforeTargets="CoreCompile">
+    <ItemGroup>
+      <Compile Include="$(IntermediateOutputPath)LabCalculator*.cs" Exclude="@(Compile)" />
+    </ItemGroup>
+  </Target>
 
 </Project>
