@@ -1,44 +1,106 @@
-﻿using Spreadsheet.Core;
+using Spreadsheet.Core;
+using Spreadsheet.Core.Storage;
 
 namespace Spreadsheet.UI;
 
-// Головне вікно. Поки що макет: сітка і кнопки, обчислень ще немає
+// Головне вікно: показує таблицю і передає дії користувача контролеру, сама нічого не рахує
 public partial class MainPage : ContentPage
 {
-    private const int DefaultRows = 10;
-    private const int DefaultColumns = 10;
+    // сюди зберігаються таблиці
+    private static readonly string FilesFolder =
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Spreadsheet74");
 
-    private ViewMode mode = ViewMode.Value;
+    private readonly SpreadsheetController controller =
+        new(new LocalFileStorage());
+    private Entry[,] cellEntries = new Entry[0, 0];
+    private int selectedRow;
+    private int selectedColumn;
 
     public MainPage()
     {
         InitializeComponent();
-        BuildGrid(DefaultRows, DefaultColumns);
+        RefreshGrid();
     }
 
-    private void OnCellFocused(int row, int column, Entry entry)
+    public void OnCellUnfocused(string address, string text)
     {
-        cellLabel.Text = new CellAddress(column, row).ToString();
-        formulaEntry.Text = entry.Text;
+        controller.HandleCellEdit(address, text);
+        RefreshGrid();
+        var a = CellAddress.Parse(address);
+        ShowMessage(controller.GetCellErrorDetails(a.Row, a.Column));
     }
 
-    private void OnFormulaCompleted(object? sender, EventArgs e) => NotReady();
+    private void OnCellFocused(int row, int column)
+    {
+        selectedRow = row;
+        selectedColumn = column;
+        string expression = controller.GetCellExpression(row, column);
+        cellEntries[row, column].Text = expression;   // у клітинці редагуємо вираз, навіть у режимі значень
+        cellLabel.Text = new CellAddress(column, row).ToString();
+        formulaEntry.Text = expression;
+        ShowMessage(controller.GetCellErrorDetails(row, column));
+    }
+
+    private void OnFormulaCompleted(object? sender, EventArgs e)
+        => OnCellUnfocused(new CellAddress(selectedColumn, selectedRow).ToString(), formulaEntry.Text ?? "");
 
     public void OnModeButtonClicked(object? sender, EventArgs e)
     {
-        mode = mode == ViewMode.Value ? ViewMode.Expression : ViewMode.Value;
-        modeButton.Text = mode == ViewMode.Value ? "Режим: ЗНАЧЕННЯ" : "Режим: ВИРАЗ";
+        controller.HandleToggleMode();
+        modeButton.Text = controller.GetMode() == ViewMode.Value ? "Режим: ЗНАЧЕННЯ" : "Режим: ВИРАЗ";
+        RefreshGrid();
     }
 
-    public void OnNewTableClicked(object? sender, EventArgs e) => NotReady();
-    public void OnOpenFileClicked(object? sender, EventArgs e) => NotReady();
-    public void OnSaveFileClicked(object? sender, EventArgs e) => NotReady();
-    public void OnOpenDriveClicked(object? sender, EventArgs e) => NotReady();
-    public void OnSaveDriveClicked(object? sender, EventArgs e) => NotReady();
-    public void OnAddRowClicked(object? sender, EventArgs e) => NotReady();
-    public void OnRemoveRowClicked(object? sender, EventArgs e) => NotReady();
-    public void OnAddColumnClicked(object? sender, EventArgs e) => NotReady();
-    public void OnRemoveColumnClicked(object? sender, EventArgs e) => NotReady();
+    public void OnAddRowClicked(object? sender, EventArgs e) => ChangeSize(controller.HandleAddRow);
+    public void OnRemoveRowClicked(object? sender, EventArgs e) => ChangeSize(controller.HandleRemoveRow);
+    public void OnAddColumnClicked(object? sender, EventArgs e) => ChangeSize(controller.HandleAddColumn);
+    public void OnRemoveColumnClicked(object? sender, EventArgs e) => ChangeSize(controller.HandleRemoveColumn);
+
+    public async void OnNewTableClicked(object? sender, EventArgs e)
+    {
+        if (await ConfirmDiscard())
+        {
+            controller.HandleNewTable(SpreadsheetController.DefaultRows, SpreadsheetController.DefaultColumns);
+            RefreshGrid();
+        }
+    }
+
+    public async void OnSaveFileClicked(object? sender, EventArgs e)
+    {
+        string? name = await AskFileName();
+        if (name == null) return;
+        try
+        {
+            Directory.CreateDirectory(FilesFolder);
+            string path = Path.Combine(FilesFolder, name.EndsWith(".json") ? name : name + ".json");
+            await controller.SaveToFileAsync(path);
+            ShowMessage($"Збережено: {path}");
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Помилка збереження", ex.Message, "OK");
+        }
+    }
+
+    public async void OnOpenFileClicked(object? sender, EventArgs e)
+    {
+        if (!await ConfirmDiscard()) return;
+        var file = await FilePicker.PickAsync(new PickOptions { PickerTitle = "Оберіть таблицю (.json)" });
+        if (file == null) return;
+        try
+        {
+            await controller.LoadFromFileAsync(file.FullPath);
+            RefreshGrid();
+            ShowMessage($"Відкрито: {file.FullPath}");
+        }
+        catch (Exception ex)   // файл не JSON або в ньому погані дані
+        {
+            await DisplayAlert("Не вдалося відкрити файл", ex.Message, "OK");
+        }
+    }
+
+    public void OnSaveDriveClicked(object? sender, EventArgs e) => ShowMessage("Google Drive ще не реалізовано");
+    public void OnOpenDriveClicked(object? sender, EventArgs e) => ShowMessage("Google Drive ще не реалізовано");
 
     public async void OnHelpClicked(object? sender, EventArgs e) => await DisplayAlert("Довідка",
         "Лабораторна робота 1*, варіант 74.\n\n" +
@@ -48,10 +110,58 @@ public partial class MainPage : ContentPage
         "  mmax(x1, …, xN), mmin(x1, …, xN)\n" +
         "  =  <  >  <=  >=  <>", "OK");
 
-    private void NotReady() => statusLabel.Text = "Ще не реалізовано (макет інтерфейсу)";
+    // Викликається з MauiProgram перед закриттям вікна. true - можна закривати
+    public Task<bool> OnClosing() => ConfirmDiscard();
+
+    private void ChangeSize(Action action)
+    {
+        try
+        {
+            action();
+            RefreshGrid();
+        }
+        catch (InvalidOperationException ex)
+        {
+            ShowMessage(ex.Message);
+        }
+    }
+
+    private async Task<bool> ConfirmDiscard()
+        => !controller.HasUnsavedChanges()
+           || await DisplayAlert("Незбережені зміни", "Таблицю не збережено. Продовжити без збереження?", "Так", "Ні");
+
+    private Task<string?> AskFileName()
+        => DisplayPromptAsync("Файл", "Назва файлу:", "OK", "Скасувати", initialValue: "lab74.json");
+
+    private void ShowMessage(string text) => statusLabel.Text = text;
+
+    // Перебудовує сітку, якщо змінився розмір, і оновлює тексти всіх клітинок
+    private void RefreshGrid()
+    {
+        int rows = controller.GetTableRowCount();
+        int columns = controller.GetTableColumnCount();
+        if (cellEntries.GetLength(0) != rows || cellEntries.GetLength(1) != columns)
+        {
+            BuildGrid(rows, columns);
+        }
+        for (int r = 0; r < rows; r++)
+        {
+            for (int c = 0; c < columns; c++)
+            {
+                if (!cellEntries[r, c].IsFocused)   // не затираємо те, що користувач зараз редагує
+                {
+                    cellEntries[r, c].Text = controller.GetCellText(r, c);
+                }
+            }
+        }
+    }
 
     private void BuildGrid(int rows, int columns)
     {
+        tableGrid.Children.Clear();
+        tableGrid.RowDefinitions.Clear();
+        tableGrid.ColumnDefinitions.Clear();
+
         tableGrid.ColumnDefinitions.Add(new ColumnDefinition(40));
         for (int c = 0; c < columns; c++) tableGrid.ColumnDefinitions.Add(new ColumnDefinition(110));
         for (int r = 0; r <= rows; r++) tableGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
@@ -60,6 +170,7 @@ public partial class MainPage : ContentPage
         {
             tableGrid.Add(Header(CellAddress.ColumnName(c)), c + 1, 0);
         }
+        cellEntries = new Entry[rows, columns];
         for (int r = 0; r < rows; r++)
         {
             tableGrid.Add(Header((r + 1).ToString()), 0, r + 1);
@@ -67,7 +178,9 @@ public partial class MainPage : ContentPage
             {
                 int row = r, column = c;   // свої копії, інакше всі лямбди побачать останні r і c
                 var entry = new Entry();
-                entry.Focused += (_, _) => OnCellFocused(row, column, entry);
+                entry.Focused += (_, _) => OnCellFocused(row, column);
+                entry.Unfocused += (_, _) => OnCellUnfocused(new CellAddress(column, row).ToString(), entry.Text ?? "");
+                cellEntries[r, c] = entry;
                 tableGrid.Add(entry, c + 1, r + 1);
             }
         }

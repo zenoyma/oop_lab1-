@@ -23,6 +23,9 @@ public class Table
 
     public Cell GetCell(CellAddress address) => cells.TryGetValue(address, out var cell) ? cell : new Cell();
 
+    // Адреси непорожніх клітинок (для збереження)
+    public IEnumerable<CellAddress> GetFilledAddresses() => cells.Keys;
+
     // Ввели текст: розбираємо -> оновлюємо граф -> перераховуємо клітинку і залежні
     public void UpdateCell(CellAddress address, string text)
     {

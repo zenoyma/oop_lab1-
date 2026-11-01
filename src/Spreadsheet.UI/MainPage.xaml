@@ -6,7 +6,7 @@
 
     <Grid RowDefinitions="Auto,Auto,*,Auto" Padding="8" RowSpacing="6">
 
-        <!-- Кнопки -->
+        <!-- Кнопки: кожна лише викликає метод контролера -->
         <FlexLayout Grid.Row="0" Wrap="Wrap" AlignItems="Center">
             <FlexLayout.Resources>
                 <Style TargetType="Button">
