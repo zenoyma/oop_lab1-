@@ -23,7 +23,7 @@ public static class MauiProgram
 			bool confirmed = false;
 			window.AppWindow.Closing += async (_, e) =>
 			{
-				if (confirmed || Application.Current?.MainPage is not MainPage page) return;
+				if (confirmed || Application.Current?.MainPage is not NavigationPage { RootPage: MainPage page }) return;
 				e.Cancel = true;
 				if (await page.OnClosing())
 				{

@@ -13,6 +13,14 @@ The table can be saved to a file or to Google Drive.
 
 Bonus: a cell can contain a small program with variables, if and while.
 
+## Test files
+
+Example tables in `samples/`, open them with "Відкрити файл":
+- `1_operations.json` - all operations of the variant, big integers
+- `2_errors.json` - #SYNTAX!, #REF!, #NAME?, #VALUE!
+- `3_cycle.json` - circular references (#CYCLE!)
+- `4_programs.json` - bonus programs, #LOOP!
+
 ## UML diagrams
 
 Use-case:

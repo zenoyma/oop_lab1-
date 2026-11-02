@@ -1,12 +1,35 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="Spreadsheet.UI.MainPage"
-             Title="Електронна таблиця">
+             x:Class="Spreadsheet.UI.MainPage">
+
+    <!-- Головне меню: пункти викликають ті самі обробники, що й кнопки -->
+    <ContentPage.MenuBarItems>
+        <MenuBarItem Text="Файл">
+            <MenuFlyoutItem Text="Новий" Clicked="OnNewTableClicked" />
+            <MenuFlyoutItem Text="Відкрити файл" Clicked="OnOpenFileClicked" />
+            <MenuFlyoutItem Text="Зберегти у файл" Clicked="OnSaveFileClicked" />
+            <MenuFlyoutSeparator />
+            <MenuFlyoutItem Text="Відкрити з Google Drive" Clicked="OnOpenDriveClicked" />
+            <MenuFlyoutItem Text="Зберегти на Google Drive" Clicked="OnSaveDriveClicked" />
+        </MenuBarItem>
+        <MenuBarItem Text="Вигляд">
+            <MenuFlyoutItem Text="Перемкнути режим ВИРАЗ / ЗНАЧЕННЯ" Clicked="OnModeButtonClicked" />
+        </MenuBarItem>
+        <MenuBarItem Text="Таблиця">
+            <MenuFlyoutItem Text="Додати рядок" Clicked="OnAddRowClicked" />
+            <MenuFlyoutItem Text="Видалити рядок" Clicked="OnRemoveRowClicked" />
+            <MenuFlyoutItem Text="Додати стовпець" Clicked="OnAddColumnClicked" />
+            <MenuFlyoutItem Text="Видалити стовпець" Clicked="OnRemoveColumnClicked" />
+        </MenuBarItem>
+        <MenuBarItem Text="Довідка">
+            <MenuFlyoutItem Text="Про програму" Clicked="OnHelpClicked" />
+        </MenuBarItem>
+    </ContentPage.MenuBarItems>
 
     <Grid RowDefinitions="Auto,Auto,*,Auto" Padding="8" RowSpacing="6">
 
-        <!-- Кнопки: кожна лише викликає метод контролера -->
+        <!-- Кнопки дублюють головне меню; кожна лише викликає метод контролера -->
         <FlexLayout Grid.Row="0" Wrap="Wrap" AlignItems="Center">
             <FlexLayout.Resources>
                 <Style TargetType="Button">
