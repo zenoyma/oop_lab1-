@@ -13,6 +13,10 @@ public readonly record struct CellAddress(int Column, int Row)
         while (i < text.Length && text[i] >= 'A' && text[i] <= 'Z')
         {
             column = column * 26 + (text[i] - 'A' + 1);   // літери читаємо як число: A=1, Z=26, AA=27
+            if (column > 100_000)
+            {
+                return false;   // занадто довга назва стовпця - інакше int переповниться
+            }
             i++;
         }
         // має бути хоч одна літера, а після неї номер рядка від 1

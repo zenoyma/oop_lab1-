@@ -72,6 +72,7 @@ public partial class MainPage : ContentPage
         try
         {
             Directory.CreateDirectory(FilesFolder);
+            name = Path.GetFileName(name);   // тільки назва, без шляху - щоб файл не потрапив в іншу папку
             string path = Path.Combine(FilesFolder, name.EndsWith(".json") ? name : name + ".json");
             await controller.SaveToFileAsync(path);
             ShowMessage($"Збережено: {path}");
@@ -136,14 +137,16 @@ public partial class MainPage : ContentPage
     }
 
     public async void OnHelpClicked(object? sender, EventArgs e) => await DisplayAlert("Довідка",
-        "Лабораторна робота 1*, варіант 74.\n\n" +
+        "Лабораторна робота 1*, варіант 74.\n" +
+        "Автор: Бак Олександр, К-25.\n\n" +
         "Операції:\n" +
         "  inc(x), dec(x)\n" +
         "  max(x, y), min(x, y)\n" +
         "  mmax(x1, …, xN), mmin(x1, …, xN)\n" +
         "  =  <  >  <=  >=  <>\n\n" +
         "Програма в клітинці:\n" +
-        "  x := вираз;   if умова then … else …;   while умова do …;   { … }", "OK");
+        "  x := вираз;   if умова then … else …;   while умова do …;   { … }\n" +
+        "  Імена змінних - лише літери і _ (x1 - це адреса клітинки)", "OK");
 
     // Викликається з MauiProgram перед закриттям вікна. true - можна закривати
     public Task<bool> OnClosing() => ConfirmDiscard();
