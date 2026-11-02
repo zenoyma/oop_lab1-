@@ -12,10 +12,12 @@ public class SpreadsheetController
     private ViewMode mode = ViewMode.Value;
     private bool hasUnsavedChanges;
     private readonly ITableStorage fileStorage;
+    private readonly ITableStorage? driveStorage;   // null, якщо Drive не підключено
 
-    public SpreadsheetController(ITableStorage fileStorage)
+    public SpreadsheetController(ITableStorage fileStorage, ITableStorage? driveStorage = null)
     {
         this.fileStorage = fileStorage;
+        this.driveStorage = driveStorage;
     }
 
     public void HandleCellEdit(string address, string text)
@@ -59,10 +61,24 @@ public class SpreadsheetController
         hasUnsavedChanges = false;
     }
 
+    public async Task SaveToDriveAsync(string name)
+    {
+        await RequireDrive().SaveAsync(table, name);
+        hasUnsavedChanges = false;
+    }
+
+    public async Task LoadFromDriveAsync(string name)
+    {
+        table = await RequireDrive().LoadAsync(name);
+        hasUnsavedChanges = false;
+    }
+
     public int GetTableRowCount() => table.GetRowCount();
     public int GetTableColumnCount() => table.GetColumnCount();
     public bool HasUnsavedChanges() => hasUnsavedChanges;
 
     private Cell GetCell(int row, int column) => table.GetCell(new CellAddress(column, row));
 
+    private ITableStorage RequireDrive()
+        => driveStorage ?? throw new InvalidOperationException("Google Drive не налаштовано");
 }

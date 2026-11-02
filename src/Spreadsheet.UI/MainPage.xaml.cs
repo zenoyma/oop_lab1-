@@ -6,12 +6,12 @@ namespace Spreadsheet.UI;
 // Головне вікно: показує таблицю і передає дії користувача контролеру, сама нічого не рахує
 public partial class MainPage : ContentPage
 {
-    // сюди зберігаються таблиці
+    // тут лежать збережені таблиці, client_secret.json і токен Google
     private static readonly string FilesFolder =
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Spreadsheet74");
 
     private readonly SpreadsheetController controller =
-        new(new LocalFileStorage());
+        new(new LocalFileStorage(), new GoogleDriveStorage(FilesFolder));
     private Entry[,] cellEntries = new Entry[0, 0];
     private int selectedRow;
     private int selectedColumn;
@@ -99,8 +99,41 @@ public partial class MainPage : ContentPage
         }
     }
 
-    public void OnSaveDriveClicked(object? sender, EventArgs e) => ShowMessage("Google Drive ще не реалізовано");
-    public void OnOpenDriveClicked(object? sender, EventArgs e) => ShowMessage("Google Drive ще не реалізовано");
+    public async void OnSaveDriveClicked(object? sender, EventArgs e)
+    {
+        string? name = await AskFileName();
+        if (name == null) return;
+        try
+        {
+            ShowMessage("Збереження на Google Drive…");
+            await controller.SaveToDriveAsync(name);
+            ShowMessage($"Збережено на Google Drive: {name}");
+        }
+        catch (Exception ex)
+        {
+            ShowMessage("");
+            await DisplayAlert("Помилка Google Drive", ex.Message, "OK");
+        }
+    }
+
+    public async void OnOpenDriveClicked(object? sender, EventArgs e)
+    {
+        if (!await ConfirmDiscard()) return;
+        string? name = await AskFileName();
+        if (name == null) return;
+        try
+        {
+            ShowMessage("Завантаження з Google Drive…");
+            await controller.LoadFromDriveAsync(name);
+            RefreshGrid();
+            ShowMessage($"Відкрито з Google Drive: {name}");
+        }
+        catch (Exception ex)
+        {
+            ShowMessage("");
+            await DisplayAlert("Помилка Google Drive", ex.Message, "OK");
+        }
+    }
 
     public async void OnHelpClicked(object? sender, EventArgs e) => await DisplayAlert("Довідка",
         "Лабораторна робота 1*, варіант 74.\n\n" +
@@ -108,7 +141,9 @@ public partial class MainPage : ContentPage
         "  inc(x), dec(x)\n" +
         "  max(x, y), min(x, y)\n" +
         "  mmax(x1, …, xN), mmin(x1, …, xN)\n" +
-        "  =  <  >  <=  >=  <>", "OK");
+        "  =  <  >  <=  >=  <>\n\n" +
+        "Програма в клітинці:\n" +
+        "  x := вираз;   if умова then … else …;   while умова do …;   { … }", "OK");
 
     // Викликається з MauiProgram перед закриттям вікна. true - можна закривати
     public Task<bool> OnClosing() => ConfirmDiscard();

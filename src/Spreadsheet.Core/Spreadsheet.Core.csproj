@@ -11,6 +11,7 @@
   <ItemGroup>
     <PackageReference Include="Antlr4.Runtime.Standard" Version="4.13.1" />
     <PackageReference Include="Antlr4BuildTasks" Version="12.8.0" PrivateAssets="all" />
+    <PackageReference Include="Google.Apis.Drive.v3" Version="1.77.0.4276" />
   </ItemGroup>
 
   <!-- з граматики під час збірки генеруються LabCalculatorLexer, LabCalculatorParser, LabCalculatorBaseVisitor -->

@@ -3,8 +3,19 @@ grammar LabCalculator;
 // Регістр літер не важливий: MAX(a1, 2) = max(A1, 2)
 options { caseInsensitive = true; }
 
-// Точка входу: текст клітинки - один вираз
-program : expression EOF ;
+// Текст клітинки - програма (бонус). Звичайний вираз "max(A1, 2) > 1" - програма з одного оператора.
+// Результат клітинки - значення останнього виконаного оператора
+program : statementList EOF ;
+
+statementList : statement (SEMI statement)* SEMI? ;
+
+statement
+    : IDENT ASSIGN expression                            # Assign
+    | IF expression THEN statement (ELSE statement)?     # If
+    | WHILE expression DO statement                      # While
+    | LBRACE statementList RBRACE                        # Block
+    | expression                                         # ExpressionStatement
+    ;
 
 // Порядок альтернатив задає пріоритет: порівняння виконується останнім
 expression
@@ -25,6 +36,16 @@ MMAX : 'mmax' ;
 MMIN : 'mmin' ;
 MAX  : 'max' ;
 MIN  : 'min' ;
+IF    : 'if' ;
+THEN  : 'then' ;
+ELSE  : 'else' ;
+WHILE : 'while' ;
+DO    : 'do' ;
+
+ASSIGN : ':=' ;
+SEMI   : ';' ;
+LBRACE : '{' ;
+RBRACE : '}' ;
 
 NEQ : '<>' ;
 LE  : '<=' ;
@@ -39,6 +60,6 @@ COMMA  : ',' ;
 
 NUMBER : [0-9]+ ;
 CELL   : [A-Z]+ [0-9]+ ;           // A1, AB12
-IDENT  : [A-Z_] [A-Z_0-9]* ;       // невідоме ім'я -> #NAME?
+IDENT  : [A-Z_] [A-Z_0-9]* ;       // ім'я змінної
 
 WS : [ \t\r\n]+ -> skip ;
