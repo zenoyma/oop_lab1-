@@ -11,7 +11,7 @@ namespace Spreadsheet.Core.Storage;
 // Збереження таблиці у Google Drive (той самий JSON, що й у файлі).
 // Потрібен client_secret.json (OAuth-клієнт типу "Desktop app" з Google Cloud Console) у папці appFolder.
 // Право DriveFile: програма бачить лише ті файли, які сама створила.
-public class GoogleDriveStorage : ITableStorage
+public class GoogleDriveStorage : ITableStorage, IListableStorage
 {
     private const string JsonMime = "application/json";
 
@@ -54,6 +54,18 @@ public class GoogleDriveStorage : ITableStorage
         var dto = await JsonSerializer.DeserializeAsync<TableDto>(stream)
                   ?? throw new InvalidDataException("Порожній файл");
         return dto.ToTable();
+    }
+
+    // Назви всіх таблиць програми на Drive, нові зверху
+    public async Task<List<string>> ListAsync()
+    {
+        DriveService drive = await AuthorizeAsync();
+        var request = drive.Files.List();
+        request.Q = $"mimeType = '{JsonMime}' and trashed = false";
+        request.Fields = "files(name)";
+        request.OrderBy = "modifiedTime desc";
+        var result = await request.ExecuteAsync();                                     // files.list
+        return result.Files.Select(f => f.Name).Distinct().ToList();
     }
 
     // OAuth: перший раз відкривається браузер для входу, далі токен береться з appFolder\token

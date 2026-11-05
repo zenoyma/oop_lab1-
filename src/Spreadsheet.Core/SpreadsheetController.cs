@@ -73,6 +73,11 @@ public class SpreadsheetController
         hasUnsavedChanges = false;
     }
 
+    public Task<List<string>> GetDriveFileNamesAsync()
+        => RequireDrive() is IListableStorage listable
+            ? listable.ListAsync()
+            : throw new InvalidOperationException("Це сховище не показує список файлів");
+
     public int GetTableRowCount() => table.GetRowCount();
     public int GetTableColumnCount() => table.GetColumnCount();
     public bool HasUnsavedChanges() => hasUnsavedChanges;

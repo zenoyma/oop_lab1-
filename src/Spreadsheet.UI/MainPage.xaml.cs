@@ -120,10 +120,19 @@ public partial class MainPage : ContentPage
     public async void OnOpenDriveClicked(object? sender, EventArgs e)
     {
         if (!await ConfirmDiscard()) return;
-        string? name = await AskFileName();
-        if (name == null) return;
         try
         {
+            ShowMessage("Отримання списку файлів з Google Drive…");
+            List<string> names = await controller.GetDriveFileNamesAsync();
+            ShowMessage("");
+            if (names.Count == 0)
+            {
+                await DisplayAlert("Google Drive", "На Google Drive ще немає збережених таблиць", "OK");
+                return;
+            }
+            string? name = await DisplayActionSheet("Оберіть таблицю", "Скасувати", null, names.ToArray());
+            if (name == null || name == "Скасувати") return;
+
             ShowMessage("Завантаження з Google Drive…");
             await controller.LoadFromDriveAsync(name);
             RefreshGrid();
